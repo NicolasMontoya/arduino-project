@@ -1,7 +1,7 @@
 int incomingByte = 0;
 bool dataArray[600];
 bool tmp[8];
-int actualpos;
+int actualpos = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -16,9 +16,11 @@ void loop() {
       if (incomingByte == 113) {
         deleteArray();
       } else if (incomingByte > 47 && incomingByte < 58) {
+          actualpos =+ 8;
           fromByte(incomingByte - 48, tmp);
-          for (int i = 0; i < 8; ++i)
-              Serial.println(tmp[i]);          
+          locateData(tmp);
+          printArray();
+          Serial.println("Finalizo");       
       } else {
         Serial.println("No es un caracter válido");
         }
