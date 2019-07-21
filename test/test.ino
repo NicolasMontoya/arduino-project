@@ -16,10 +16,10 @@ void loop() {
       Serial.println(incomingByte);
       if ( incomingByte == 49 ) {
         digitalWrite(LED1, HIGH);
-        digitalWrite(LED2, LOW);
-      } else if ( incomingByte == 48 ) {
         digitalWrite(LED2, HIGH);
+      } else if ( incomingByte == 48 ) {
         digitalWrite(LED1, LOW);
+        digitalWrite(LED2, LOW);
         
         }
   }
