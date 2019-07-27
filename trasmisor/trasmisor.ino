@@ -1,8 +1,10 @@
 int incomingByte = 0;
 bool dataArray[600];
-bool tmp[4];
-int actualpos = 0;
+bool tmp[8];
+int printpos = 0;
+int arraylength = 0;
 bool state = 0;
+int totalCharacters = 0;
 
 int LED1 = 13;
 int LED2 = 12;
@@ -11,7 +13,10 @@ void setup() {
   pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
   Serial.begin(9600);
-  Serial.println("'q' -> Borrar datos ");
+  Serial.println("'n' -> Enviar siguiente ");
+  Serial.println("'p' -> Enviar anterior ");
+  Serial.println("'b' -> Borrar carga ");
+  Serial.println("'c' -> Cargar datos ");
   Serial.println("Ingrese opción: \n");
 }
 
@@ -19,12 +24,66 @@ void loop() {
   
   while ( Serial.available() ) {
       incomingByte = Serial.read();
-      if (incomingByte == 'q') {
-        Serial.println("Arreglo borrado");
-        deleteArray();
-      } else if (incomingByte == 'e') {
-        Serial.println("INICIO ENVIO DE INFORMACIÓN");
-        digitalWrite(LED1, HIGH);
+      if (incomingByte == 'n') {
+        Serial.println("Enviando siguiente caracter ...");
+        printByte();
+      }
+      else if (incomingByte == 'p') {
+        Serial.println("Enviando caracter anterior ...");
+        printpos -= 8;
+        if (printpos < 0) {
+          printpos = 0;  
+        }
+        printByte();
+      }
+      else if (incomingByte == 'c') {
+        Serial.println("Entro a modo cargar - Ingrese caracteres");
+        while (1){
+            while(Serial.available()) {
+              incomingByte = Serial.read();
+              if (incomingByte > 0 && incomingByte < 144) {
+                  locateData(incomingByte, tmp);
+                  arraylength = arraylength + 8;
+                  totalCharacters += incomingByte & 0x07;
+                  Serial.println("Simbolo cargado  ");   
+              }
+            }
+            if (totalCharacters >= 64) {
+              Serial.print(totalCharacters);
+              break;  
+            }
+          }
+      } else if (incomingByte == 'b'){
+          deleteArray();
+      }
+    
+  }
+
+}
+
+void fromByte(unsigned int c, bool b[8])
+{
+    int k = 8;
+    for (int i=0; i < 8; ++i){
+        b[--k] = (c & (1<<i)) != 0;}
+}
+
+void locateData(int c, bool source[8]) {
+  int k = 8;
+  for (int i=0; i < 8; ++i)
+      source[--k] = (c & (1<<i)) != 0;
+  for (int i = 0; i < 8; ++i){
+        Serial.print(source[i]);
+        dataArray[arraylength + i] = source[i];}
+}
+
+void deleteArray() {
+  arraylength = 0;
+  totalCharacters = 0;
+}
+
+void printByte() {
+  digitalWrite(LED1, HIGH);
         digitalWrite(LED2, HIGH);
         delay(2000);
         digitalWrite(LED1, LOW);
@@ -33,17 +92,23 @@ void loop() {
         digitalWrite(LED1, HIGH);
         digitalWrite(LED2, HIGH);
         delay(2000);
-        for (int i = 0 ; i < actualpos ; i = i + 2 ){
-            if (dataArray[i] == true) {
+        int finalData = printpos + 8;
+        while ( (printpos < finalData) &&  (printpos < arraylength) ) {
+            if (dataArray[printpos] == true) {
+              Serial.println("1");
               digitalWrite(LED1, HIGH);
             } else {
+              Serial.println("0");
               digitalWrite(LED1, LOW);
               }
-            if (dataArray[i + 1] == true) {
+            if (dataArray[printpos + 1] == true) {
+              Serial.println("1");
               digitalWrite(LED2, HIGH);
             } else {
+              Serial.println("0");
               digitalWrite(LED2, LOW);
               }
+           printpos+=2;
            delay(2000);
           }
           digitalWrite(LED1, LOW);
@@ -55,35 +120,9 @@ void loop() {
           digitalWrite(LED1, LOW);
           digitalWrite(LED2, LOW);
           delay(500);
-      } else if (incomingByte > 47 && incomingByte < 58) {
-          fromByte(incomingByte - 48, tmp);
-          locateData(tmp);
-          actualpos = actualpos + 4;
-          Serial.println("Cargado");   
-      } else {
-        Serial.println("No es un caracter válido");
-        }
-  }
-
-}
-
-void fromByte(unsigned int c, bool b[4])
-{
-    int k = 4;
-    for (int i=0; i < 4; ++i)
-        b[--k] = (c & (1<<i)) != 0;
-}
-
-void locateData(bool source[4]) {
-  for (int i = 0; i < 4; ++i)
-        dataArray[actualpos + i] = source[i];
-}
-
-void deleteArray() {
-  actualpos = 0;
 }
 
 void printArray() {
-  for (int i = 0; i < actualpos; ++i)
+  for (int i = 0; i < arraylength; ++i)
         Serial.println(dataArray[i]);
 }
